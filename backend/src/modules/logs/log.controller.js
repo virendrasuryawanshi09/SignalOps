@@ -1,16 +1,16 @@
-const Log = require("./log.model");
+const logService = require("./log.service");
 
 async function createLog(req, res) {
   try {
-    const log = await Log.create(req.body);
+    const result = await logService.ingestLog(req.body);
 
     return res.status(201).json({
       success: true,
-      message: "Log created successfully",
-      data: log,
+      message: "Log ingested and mapped successfully",
+      data: result,
     });
   } catch (error) {
-    return res.status(500).json({
+    return res.status(error.message.includes("validation") ? 400 : 500).json({
       success: false,
       message: error.message,
     });
@@ -19,7 +19,16 @@ async function createLog(req, res) {
 
 async function getAllLogs(req, res) {
   try {
-    const logs = await Log.find().sort({ createdAt: -1 });
+    const limit = parseInt(req.query.limit, 10) || 100;
+    const skip = parseInt(req.query.skip, 10) || 0;
+    
+    // Abstracting query filters to isolate controller from DB querying logic
+    const filters = {};
+    if (req.query.service) filters.service = req.query.service;
+    if (req.query.severity) filters.severity = req.query.severity;
+    if (req.query.fingerprint) filters.fingerprint = req.query.fingerprint;
+
+    const logs = await logService.getLogsList(filters, limit, skip);
 
     return res.status(200).json({
       success: true,
@@ -36,21 +45,14 @@ async function getAllLogs(req, res) {
 
 async function getLogById(req, res) {
   try {
-    const log = await Log.findById(req.params.id);
-
-    if (!log) {
-      return res.status(404).json({
-        success: false,
-        message: "Log not found",
-      });
-    }
+    const log = await logService.getLogDetails(req.params.id);
 
     return res.status(200).json({
       success: true,
       data: log,
     });
   } catch (error) {
-    return res.status(500).json({
+    return res.status(error.message.includes("not found") ? 404 : 500).json({
       success: false,
       message: error.message,
     });

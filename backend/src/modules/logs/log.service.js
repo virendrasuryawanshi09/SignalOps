@@ -1,50 +1,48 @@
-const Log = require("./log.model");
+const logRepository = require("./log.repository");
+const incidentService = require("../incidents/incident.service");
+const { generateFingerprint } = require("../../utils/fingerprint");
 
-async function createLog(logData) {
-  try {
-    const log = new Log(logData);
-    return await log.save();
-  } catch (error) {
-    throw new Error(`Failed to create log: ${error.message}`);
+class LogService {
+  async ingestLog(logData) {
+    if (!logData.service || !logData.message) {
+      throw new Error("Log schema validation failed: 'service' and 'message' are required");
+    }
+
+    // 1. Generate unique deterministic fingerprint based on stack trace details and service
+    const fingerprint = generateFingerprint(
+      logData.service,
+      logData.message,
+      logData.stackTrace || ""
+    );
+
+    // 2. Map log to an Incident structure (handles state, auto-reopen, and count aggregation)
+    const incident = await incidentService.handleLogIngestion(logData, fingerprint);
+
+    // 3. Persist the log referencing the generated fingerprint
+    const enrichedLogData = {
+      ...logData,
+      fingerprint,
+    };
+
+    const log = await logRepository.create(enrichedLogData);
+
+    return {
+      log,
+      incidentId: incident._id,
+    };
+  }
+
+  async getLogDetails(id) {
+    const log = await logRepository.findById(id);
+    if (!log) {
+      throw new Error("Log record not found");
+    }
+    return log;
+  }
+
+  async getLogsList(filters = {}, limit = 100, skip = 0) {
+    return await logRepository.findAll(filters, limit, skip);
   }
 }
 
-async function getAllLogs() {
-  try {
-    return await Log.find().sort({ createdAt: -1 });
-  } catch (error) {
-    throw new Error(`Failed to fetch logs: ${error.message}`);
-  }
-}
-
-async function getLogById(logId) {
-  try {
-    return await Log.findById(logId);
-  } catch (error) {
-    throw new Error(`Failed to fetch log by ID: ${error.message}`);
-  }
-}
-
-async function deleteLog(logId) {
-  try {
-    return await Log.findByIdAndDelete(logId);
-  } catch (error) {
-    throw new Error(`Failed to delete log: ${error.message}`);
-  }
-}
-
-async function updateLogStatus(logId, status) {
-  try {
-    return await Log.findByIdAndUpdate(logId, { status }, { new: true, runValidators: true });
-  } catch (error) {
-    throw new Error(`Failed to update log status: ${error.message}`);
-  }
-}
-
-module.exports = {
-  createLog,
-  getAllLogs,
-  getLogById,
-  deleteLog,
-  updateLogStatus,
-};
+module.exports = new LogService();
