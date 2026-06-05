@@ -1,5 +1,6 @@
 const cors = require("cors");
 const express = require("express");
+const logRoutes = require("./modules/logs/log.routes");
 
 const app = express();
 
@@ -33,6 +34,9 @@ app.get("/api", (req, res) => {
     message: "Welcome to the SignalOps API",
   });
 });
+
+// Register routes
+app.use("/api/logs", logRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
