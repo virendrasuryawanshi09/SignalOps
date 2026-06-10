@@ -1,6 +1,7 @@
 const cors = require("cors");
 const express = require("express");
 const logRoutes = require("./modules/logs/log.routes");
+const authRoutes = require("./modules/auth/auth.routes");
 
 const app = express();
 
@@ -13,6 +14,19 @@ app.use(
   })
 );
 app.use(express.json());
+
+
+app.use((req, res, next) => {
+  req.cookies = {};
+  const rawCookies = req.headers.cookie;
+  if (rawCookies) {
+    rawCookies.split(";").forEach((cookie) => {
+      const parts = cookie.split("=");
+      req.cookies[parts[0].trim()] = parts.slice(1).join("=").trim();
+    });
+  }
+  next();
+});
 
 app.get("/", (req, res) => {
   res.json({
@@ -35,8 +49,9 @@ app.get("/api", (req, res) => {
   });
 });
 
-// Register routes
+
 app.use("/api/logs", logRoutes);
+app.use("/api/auth", authRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
