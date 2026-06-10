@@ -1,5 +1,6 @@
 const logRepository = require("./log.repository");
 const incidentService = require("../incidents/incident.service");
+const socketManager = require("../../sockets/socketManager");
 const { generateFingerprint } = require("../../utils/fingerprint");
 
 class LogService {
@@ -8,23 +9,23 @@ class LogService {
       throw new Error("Log schema validation failed: 'service' and 'message' are required");
     }
 
-    // 1. Generate unique deterministic fingerprint based on stack trace details and service
     const fingerprint = generateFingerprint(
       logData.service,
       logData.message,
       logData.stackTrace || ""
     );
 
-    // 2. Map log to an Incident structure (handles state, auto-reopen, and count aggregation)
     const incident = await incidentService.handleLogIngestion(logData, fingerprint);
 
-    // 3. Persist the log referencing the generated fingerprint
     const enrichedLogData = {
       ...logData,
       fingerprint,
     };
 
     const log = await logRepository.create(enrichedLogData);
+
+
+    socketManager.emit("log:new", log, "dashboard:logs");
 
     return {
       log,
