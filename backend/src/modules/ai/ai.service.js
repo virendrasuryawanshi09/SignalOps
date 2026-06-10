@@ -2,6 +2,7 @@ const promptBuilder = require("./prompt.builder");
 const rootCauseAnalyzer = require("./rootCauseAnalyzer");
 const logRepository = require("../logs/log.repository");
 const incidentRepository = require("../incidents/incident.repository");
+const socketManager = require("../../sockets/socketManager");
 
 class AIService {
 
@@ -28,6 +29,8 @@ class AIService {
       rootCauseAnalysis: analysisResult.rootCause,
       fixRecommendation: analysisResult.suggestedFix,
     });
+
+    socketManager.emit("incident:updated", updatedIncident, "dashboard:logs");
 
     return updatedIncident;
   }

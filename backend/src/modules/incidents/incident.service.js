@@ -1,12 +1,15 @@
 const incidentRepository = require("./incident.repository");
 const aiService = require("../ai/ai.service");
+const socketManager = require("../../sockets/socketManager");
 
 class IncidentService {
   async handleLogIngestion(logData, fingerprint) {
     const existingIncident = await incidentRepository.findByFingerprint(fingerprint);
 
     if (existingIncident) {
-      return await incidentRepository.incrementOccurrences(fingerprint, new Date());
+      const updatedIncident = await incidentRepository.incrementOccurrences(fingerprint, new Date());
+      socketManager.emit("incident:updated", updatedIncident, "dashboard:logs");
+      return updatedIncident;
     }
 
     const newIncidentData = {
@@ -22,6 +25,8 @@ class IncidentService {
 
     const incident = await incidentRepository.create(newIncidentData);
 
+    socketManager.emit("incident:new", incident, "dashboard:logs");
+
     this.triggerAsyncWorkflows(incident);
 
     return incident;
@@ -36,11 +41,15 @@ class IncidentService {
   }
 
   async updateStatus(id, status) {
-    return await incidentRepository.update(id, { status });
+    const updatedIncident = await incidentRepository.update(id, { status });
+    socketManager.emit("incident:updated", updatedIncident, "dashboard:logs");
+    return updatedIncident;
   }
 
   async assignUser(id, userId) {
-    return await incidentRepository.update(id, { assignedTo: userId });
+    const updatedIncident = await incidentRepository.update(id, { assignedTo: userId });
+    socketManager.emit("incident:updated", updatedIncident, "dashboard:logs");
+    return updatedIncident;
   }
 
   triggerAsyncWorkflows(incident) {
