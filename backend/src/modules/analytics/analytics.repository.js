@@ -48,6 +48,65 @@ class AnalyticsRepository {
       },
     ]);
   }
+
+  async getServiceHealth() {
+    return await Incident.aggregate([
+      {
+        $group: {
+          _id: "$service",
+          totalIncidents: { $sum: 1 },
+          activeIncidents: {
+            $sum: {
+              $cond: [{ $in: ["$status", ["OPEN", "INVESTIGATING"]] }, 1, 0],
+            },
+          },
+          resolvedIncidents: {
+            $sum: {
+              $cond: [{ $eq: ["$status", "RESOLVED"] }, 1, 0],
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          service: "$_id",
+          totalIncidents: 1,
+          activeIncidents: 1,
+          resolvedIncidents: 1,
+          status: {
+            $cond: [
+              { $gt: ["$activeIncidents", 5] },
+              "CRITICAL",
+              { $cond: [{ $gt: ["$activeIncidents", 0] }, "DEGRADED", "HEALTHY"] },
+            ],
+          },
+        },
+      },
+    ]);
+  }
+
+  async getMeanTimeToResolution(filters) {
+    const matchQuery = { ...filters, status: "RESOLVED" };
+
+    const result = await Incident.aggregate([
+      { $match: matchQuery },
+      {
+        $project: {
+          durationMs: { $subtract: ["$updatedAt", "$firstSeenAt"] },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          averageDurationMs: { $avg: "$durationMs" },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    return result[0] || { averageDurationMs: 0, count: 0 };
+  }
 }
 
 module.exports = new AnalyticsRepository();
