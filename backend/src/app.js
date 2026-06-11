@@ -2,6 +2,7 @@ const cors = require("cors");
 const express = require("express");
 const logRoutes = require("./modules/logs/log.routes");
 const authRoutes = require("./modules/auth/auth.routes");
+const analyticsRoutes = require("./modules/analytics/analytics.routes");
 
 const app = express();
 
@@ -52,6 +53,7 @@ app.get("/api", (req, res) => {
 
 app.use("/api/logs", logRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
