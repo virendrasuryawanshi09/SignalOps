@@ -1,6 +1,7 @@
 const incidentRepository = require("./incident.repository");
 const aiService = require("../ai/ai.service");
 const socketManager = require("../../sockets/socketManager");
+const alertService = require("../../services/alert.service");
 
 class IncidentService {
   async handleLogIngestion(logData, fingerprint) {
@@ -58,7 +59,7 @@ class IncidentService {
         console.log(`[Async Job] Triggered pipelines for Incident ID: ${incident._id}`);
         await aiService.analyzeIncident(incident._id);
         console.log(`[Async Job] AI analysis completed successfully for Incident ID: ${incident._id}`);
-
+        await alertService.sendIncidentAlert(incident);
       } catch (err) {
         console.error(`[Async Job Error] Failed to process workflows for Incident: ${incident._id}`, err);
       }
