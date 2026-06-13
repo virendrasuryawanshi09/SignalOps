@@ -2,6 +2,7 @@ const promptBuilder = require("./prompt.builder");
 const rootCauseAnalyzer = require("./rootCauseAnalyzer");
 const logRepository = require("../logs/log.repository");
 const incidentRepository = require("../incidents/incident.repository");
+const deploymentService = require("../deployments/deployment.service");
 const socketManager = require("../../sockets/socketManager");
 
 class AIService {
@@ -18,10 +19,13 @@ class AIService {
       0
     );
 
+
+    const recentDeployments = await deploymentService.getRecentDeployments(incident.service, 5);
+
     const prompt = promptBuilder.buildAnalysisPrompt({
       incident,
       relatedLogs: contextLogs,
-      deployments: []
+      deployments: recentDeployments
     });
     const analysisResult = await rootCauseAnalyzer.analyze(prompt);
 
