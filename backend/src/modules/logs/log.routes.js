@@ -1,10 +1,11 @@
 const express = require("express");
 const logController = require("./log.controller");
+const { authenticate } = require("../../middleware/auth.middleware");
 
 const router = express.Router();
 
 router.post("/", logController.createLog);
-router.get("/", logController.getAllLogs);
-router.get("/:id", logController.getLogById);
+router.get("/", authenticate, logController.getAllLogs);
+router.get("/:id", authenticate, logController.getLogById);
 
 module.exports = router;
