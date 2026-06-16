@@ -5,11 +5,13 @@ const authRoutes = require("./modules/auth/auth.routes");
 const analyticsRoutes = require("./modules/analytics/analytics.routes");
 const deploymentRoutes = require("./modules/deployments/deployment.routes");
 const rateLimiter = require("./middleware/rateLimiter");
+const loggerMiddleware = require("./middleware/logger.middleware");
 
 const app = express();
 
 const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
 
+app.use(loggerMiddleware);
 app.use(
   cors({
     origin: CLIENT_URL,
