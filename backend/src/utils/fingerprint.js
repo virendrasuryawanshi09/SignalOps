@@ -30,10 +30,21 @@ function sanitizeMessage(message) {
 function generateFingerprint(service, message, stackTrace = "") {
   const cleanMessage = sanitizeMessage(message);
   
+  let normalizedStackTrace = "";
+  if (typeof stackTrace === "string") {
+    normalizedStackTrace = stackTrace;
+  } else if (stackTrace && typeof stackTrace === "object") {
+    try {
+      normalizedStackTrace = JSON.stringify(stackTrace);
+    } catch (e) {
+      normalizedStackTrace = "";
+    }
+  }
+
   // Parse stack trace to extract top 3 non-node-modules frames for consistency
   let traceContext = "";
-  if (stackTrace) {
-    const frames = stackTrace
+  if (normalizedStackTrace) {
+    const frames = normalizedStackTrace
       .split("\n")
       .map(line => line.trim())
       .filter(line => line.startsWith("at ") && !line.includes("node_modules") && !line.includes("node:internal"));
