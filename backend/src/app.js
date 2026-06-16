@@ -23,8 +23,17 @@ app.use((req, res, next) => {
   const rawCookies = req.headers.cookie;
   if (rawCookies) {
     rawCookies.split(";").forEach((cookie) => {
-      const parts = cookie.split("=");
-      req.cookies[parts[0].trim()] = parts.slice(1).join("=").trim();
+      const equalIndex = cookie.indexOf("=");
+      if (equalIndex === -1) return;
+      
+      const key = cookie.substring(0, equalIndex).trim();
+      const val = cookie.substring(equalIndex + 1).trim();
+      
+      try {
+        req.cookies[key] = decodeURIComponent(val);
+      } catch (e) {
+        req.cookies[key] = val;
+      }
     });
   }
   next();
