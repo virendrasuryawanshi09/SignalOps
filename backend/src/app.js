@@ -4,18 +4,22 @@ const logRoutes = require("./modules/logs/log.routes");
 const authRoutes = require("./modules/auth/auth.routes");
 const analyticsRoutes = require("./modules/analytics/analytics.routes");
 const deploymentRoutes = require("./modules/deployments/deployment.routes");
+const rateLimiter = require("./middleware/rateLimiter");
+const loggerMiddleware = require("./middleware/logger.middleware");
 
 const app = express();
 
 const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
 
+app.use(loggerMiddleware);
 app.use(
   cors({
     origin: CLIENT_URL,
     credentials: true,
   })
 );
-app.use(express.json());
+app.use(express.json({ limit: "50kb" }));
+app.use(rateLimiter({ windowMs: 15 * 60 * 1000, max: 150 }));
 
 
 app.use((req, res, next) => {
@@ -23,8 +27,17 @@ app.use((req, res, next) => {
   const rawCookies = req.headers.cookie;
   if (rawCookies) {
     rawCookies.split(";").forEach((cookie) => {
-      const parts = cookie.split("=");
-      req.cookies[parts[0].trim()] = parts.slice(1).join("=").trim();
+      const equalIndex = cookie.indexOf("=");
+      if (equalIndex === -1) return;
+      
+      const key = cookie.substring(0, equalIndex).trim();
+      const val = cookie.substring(equalIndex + 1).trim();
+      
+      try {
+        req.cookies[key] = decodeURIComponent(val);
+      } catch (e) {
+        req.cookies[key] = val;
+      }
     });
   }
   next();
@@ -64,8 +77,17 @@ app.use((req, res) => {
 });
 
 app.use((err, req, res, next) => {
-  res.status(err.status || 500).json({
-    error: process.env.NODE_ENV === "production" ? "Internal server error" : err.message,
+  const status = err.status || 500;
+  
+  if (status >= 500) {
+    console.error(`[Error Handler] ${err.stack || err.message || err}`);
+  }
+
+  res.status(status).json({
+    success: false,
+    message: process.env.NODE_ENV === "production" && status >= 500
+      ? "Internal server error"
+      : err.message || "An unexpected error occurred",
   });
 });
 
