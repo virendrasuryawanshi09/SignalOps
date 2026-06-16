@@ -73,8 +73,17 @@ app.use((req, res) => {
 });
 
 app.use((err, req, res, next) => {
-  res.status(err.status || 500).json({
-    error: process.env.NODE_ENV === "production" ? "Internal server error" : err.message,
+  const status = err.status || 500;
+  
+  if (status >= 500) {
+    console.error(`[Error Handler] ${err.stack || err.message || err}`);
+  }
+
+  res.status(status).json({
+    success: false,
+    message: process.env.NODE_ENV === "production" && status >= 500
+      ? "Internal server error"
+      : err.message || "An unexpected error occurred",
   });
 });
 
