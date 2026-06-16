@@ -1,6 +1,6 @@
 const http = require("http");
 const dotenv = require("dotenv");
-const mongoose = require("mongoose");
+const { connectDB } = require("./config/db");
 
 const app = require("./app");
 const socketManager = require("./sockets/socketManager");
@@ -9,16 +9,22 @@ dotenv.config();
 
 const PORT = process.env.PORT || 8001;
 const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
-const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URI;
 
 const server = http.createServer(app);
 
 async function startServer() {
   try {
-    if (MONGO_URI) {
-      await mongoose.connect(MONGO_URI);
-      console.log("Connected to MongoDB");
+    const isProduction = process.env.NODE_ENV === "production";
+    if (!process.env.JWT_ACCESS_SECRET || !process.env.JWT_REFRESH_SECRET) {
+      const errorMsg = "Environment configuration missing: JWT_ACCESS_SECRET and JWT_REFRESH_SECRET must be defined.";
+      if (isProduction) {
+        throw new Error(errorMsg);
+      } else {
+        console.warn(`[Warning] ${errorMsg} Fallback default secrets will be used in development.`);
+      }
     }
+
+    await connectDB();
 
     socketManager.init(server, CLIENT_URL);
 
