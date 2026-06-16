@@ -4,6 +4,7 @@ const logRoutes = require("./modules/logs/log.routes");
 const authRoutes = require("./modules/auth/auth.routes");
 const analyticsRoutes = require("./modules/analytics/analytics.routes");
 const deploymentRoutes = require("./modules/deployments/deployment.routes");
+const rateLimiter = require("./middleware/rateLimiter");
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use(
   })
 );
 app.use(express.json({ limit: "50kb" }));
+app.use(rateLimiter({ windowMs: 15 * 60 * 1000, max: 150 }));
 
 
 app.use((req, res, next) => {
