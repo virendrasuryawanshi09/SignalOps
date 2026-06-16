@@ -1,6 +1,6 @@
 const http = require("http");
 const dotenv = require("dotenv");
-const { connectDB } = require("./config/db");
+const { connectDB, disconnectDB } = require("./config/db");
 
 const app = require("./app");
 const socketManager = require("./sockets/socketManager");
@@ -38,3 +38,23 @@ async function startServer() {
 }
 
 startServer();
+
+const gracefulShutdown = async (signal) => {
+  console.log(`\n[Server] Received ${signal}. Starting graceful shutdown...`);
+
+  server.close(() => {
+    console.log("[Server] HTTP server closed.");
+  });
+
+  try {
+    await disconnectDB();
+    console.log("[Server] Database connection closed cleanly.");
+    process.exit(0);
+  } catch (err) {
+    console.error("[Server] Error disconnecting database:", err.message);
+    process.exit(1);
+  }
+};
+
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));

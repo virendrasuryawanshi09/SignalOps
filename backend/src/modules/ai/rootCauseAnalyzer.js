@@ -84,16 +84,20 @@ class RootCauseAnalyzer {
   }
 
   _parseJson(text) {
-    try {
+    if (!text) {
+      throw new Error("LLM output is empty");
+    }
 
-      let cleanText = text.trim();
-      if (cleanText.startsWith("```json")) {
-        cleanText = cleanText.substring(7);
-      }
-      if (cleanText.endsWith("```")) {
-        cleanText = cleanText.substring(0, cleanText.length - 3);
-      }
-      return JSON.parse(cleanText.trim());
+    let cleanText = text.trim();
+
+
+    const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      cleanText = jsonMatch[0];
+    }
+
+    try {
+      return JSON.parse(cleanText);
     } catch (err) {
       console.error("Failed to parse raw LLM JSON text: ", text);
       throw new Error(`LLM output was not valid JSON: ${err.message}`);
