@@ -5,6 +5,8 @@ const authRoutes = require("./modules/auth/auth.routes");
 const analyticsRoutes = require("./modules/analytics/analytics.routes");
 const deploymentRoutes = require("./modules/deployments/deployment.routes");
 const traceRoutes = require("./modules/traces/trace.routes");
+const alertRoutes = require("./modules/alerts/alert.routes");
+const monitoringRoutes = require("./modules/monitoring/monitoring.routes");
 const rateLimiter = require("./middleware/rateLimiter");
 const loggerMiddleware = require("./middleware/logger.middleware");
 
@@ -51,13 +53,7 @@ app.get("/", (req, res) => {
   });
 });
 
-app.get("/health", (req, res) => {
-  res.json({
-    status: "ok",
-    uptime: process.uptime(),
-    timestamp: new Date().toISOString(),
-  });
-});
+app.use("/", monitoringRoutes);
 
 app.get("/api", (req, res) => {
   res.json({
@@ -71,6 +67,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/deployments", deploymentRoutes);
 app.use("/api/traces", traceRoutes);
+app.use("/api/alerts", alertRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
