@@ -106,6 +106,46 @@ class AuthController {
       });
     }
   }
+
+  async forgotPassword(req, res) {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          message: "Email is required",
+        });
+      }
+
+      const result = await authService.forgotPassword(email);
+      return res.status(200).json(result);
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
+
+  async resetPassword(req, res) {
+    try {
+      const { token, password } = req.body;
+      if (!token || !password) {
+        return res.status(400).json({
+          success: false,
+          message: "Reset token and new password are required",
+        });
+      }
+
+      const result = await authService.resetPassword(token, password);
+      return res.status(200).json(result);
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
 }
 
 module.exports = new AuthController();
