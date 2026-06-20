@@ -26,7 +26,7 @@ class IncidentRepository {
       { fingerprint },
       {
         $inc: { occurrences: 1 },
-        $set: { lastSeenAt, status: "OPEN" }, // Reopen if closed and recurs
+        $set: { lastSeenAt, status: "OPEN" }, 
       },
       { new: true }
     );
@@ -38,6 +38,10 @@ class IncidentRepository {
       .skip(skip)
       .limit(limit)
       .populate("assignedTo", "name email role");
+  }
+
+  async count(query = {}) {
+    return await Incident.countDocuments(query);
   }
 }
 

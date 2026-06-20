@@ -53,6 +53,12 @@ class IncidentService {
     return updatedIncident;
   }
 
+  async getIncidentsList(filters = {}, limit = 50, skip = 0) {
+    const list = await incidentRepository.findAll(filters, limit, skip);
+    const total = await incidentRepository.count(filters);
+    return { list, total };
+  }
+
   triggerAsyncWorkflows(incident) {
     setImmediate(async () => {
       try {
