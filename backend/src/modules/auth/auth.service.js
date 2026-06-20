@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const userRepository = require("./auth.repository");
 const User = require("./auth.model");
 const jwt = require("../../utils/jwt");
@@ -100,6 +101,43 @@ class AuthService {
     return {
       accessToken,
       refreshToken,
+    };
+  }
+
+  async forgotPassword(email) {
+    const user = await userRepository.findByEmail(email);
+    if (!user) {
+      return { success: true, message: "If that email exists, a reset token has been generated." };
+    }
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + 3600000);
+
+    await userRepository.savePasswordResetToken(user._id, resetToken, expiresAt);
+
+    return {
+      success: true,
+      message: "Password reset token generated successfully",
+      resetToken,
+    };
+  }
+
+  async resetPassword(token, newPassword) {
+    if (!token || !newPassword) {
+      throw new Error("Password reset failed: Reset token and new password are required");
+    }
+
+    const user = await userRepository.findByResetToken(token);
+    if (!user) {
+      throw new Error("Password reset failed: Reset token is invalid or has expired");
+    }
+
+    const hashedPassword = User.hashPassword(newPassword);
+    await userRepository.updatePasswordAndClearToken(user._id, hashedPassword);
+
+    return {
+      success: true,
+      message: "Password has been reset successfully",
     };
   }
 }

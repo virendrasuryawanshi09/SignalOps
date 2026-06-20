@@ -37,6 +37,41 @@ class UserRepository {
       { new: true }
     );
   }
+
+  async savePasswordResetToken(userId, token, expiresAt) {
+    return await User.findByIdAndUpdate(
+      userId,
+      {
+        $set: {
+          passwordResetToken: token,
+          passwordResetExpiresAt: expiresAt,
+        },
+      },
+      { new: true }
+    );
+  }
+
+  async findByResetToken(token) {
+    return await User.findOne({
+      passwordResetToken: token,
+      passwordResetExpiresAt: { $gt: new Date() },
+    });
+  }
+
+  async updatePasswordAndClearToken(userId, hashedPassword) {
+    return await User.findByIdAndUpdate(
+      userId,
+      {
+        $set: {
+          password: hashedPassword,
+          passwordResetToken: null,
+          passwordResetExpiresAt: null,
+          refreshTokens: [],
+        },
+      },
+      { new: true }
+    );
+  }
 }
 
 module.exports = new UserRepository();

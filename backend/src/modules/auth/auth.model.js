@@ -30,17 +30,21 @@ const userSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    passwordResetToken: {
+      type: String,
+      default: null,
+    },
+    passwordResetExpiresAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
   }
 );
 
-/**
- * Staff Architect Decision: Use Node's built-in crypto module (scrypt)
- * for secure password hashing. Avoids native node-gyp compilation issues with bcrypt
- * on diverse target OS platforms while maintaining industry-standard safety.
- */
+
 userSchema.statics.hashPassword = function (password) {
   const salt = crypto.randomBytes(16).toString("hex");
   const hash = crypto.scryptSync(password, salt, 64).toString("hex");
