@@ -4,6 +4,7 @@ const logRoutes = require("./modules/logs/log.routes");
 const authRoutes = require("./modules/auth/auth.routes");
 const analyticsRoutes = require("./modules/analytics/analytics.routes");
 const deploymentRoutes = require("./modules/deployments/deployment.routes");
+const incidentRoutes = require("./modules/incidents/incident.routes");
 const traceRoutes = require("./modules/traces/trace.routes");
 const alertRoutes = require("./modules/alerts/alert.routes");
 const monitoringRoutes = require("./modules/monitoring/monitoring.routes");
@@ -66,6 +67,7 @@ app.use("/api/logs", logRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/deployments", deploymentRoutes);
+app.use("/api/incidents", incidentRoutes);
 app.use("/api/traces", traceRoutes);
 app.use("/api/alerts", alertRoutes);
 
