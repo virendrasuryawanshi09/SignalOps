@@ -1,4 +1,5 @@
 const incidentService = require("./incident.service");
+const aiService = require("../ai/ai.service");
 
 class IncidentController {
   async getAllIncidents(req, res) {
@@ -80,6 +81,22 @@ class IncidentController {
       return res.status(200).json({
         success: true,
         message: "Incident assignment updated successfully",
+        data: updated,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
+
+  async analyzeIncident(req, res) {
+    try {
+      const updated = await aiService.analyzeIncident(req.params.id);
+      return res.status(200).json({
+        success: true,
+        message: "AI analysis and fix recommendations updated successfully",
         data: updated,
       });
     } catch (error) {
